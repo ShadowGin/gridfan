@@ -12,57 +12,65 @@ mode=99
 # start the loop
 while true
 do
-	echo "--------"
-	#get the cpu temp us lm-sensors, uses an awk function to scan for core and cut out the rest of the crap in the output
-	temps=$(sensors | awk '/^Core /{++r; gsub(/[^[:digit:]]+/, "", $3); s+=$3} END{print s/(10*r)}')
-	let temps=${temps%.*}
-	
-	# find the difference between the previous temp and the current temp, this stops the fans from spinning up and down to quickly 
-	let dif=$(abs_diff $prevtemp $temps)
+  echo "--------"
+  #get the cpu temp us lm-sensors, uses an awk function to scan for core and cut out the rest of the crap in the output
+  temps=$(sensors | awk '/^Core /{++r; gsub(/[^[:digit:]]+/, "", $3); s+=$3} END{print s/(10*r)}')
+  let temps=${temps%.*}
 
-	echo "temps = $temps"
-	#echo "prevtemp = $prevtemp"
-	#echo "dif = $dif"
-	echo "mode = $mode"
-	# if the difference is greater than or equal to 5 it will run the fan speed rules
-	if [ $dif -ge 5 ]
-	then
-		# u can fine tune this as much as you like
-		if [ $temps -lt 50 ]
-		then
-			/home/drakkir/src/gridfan/gridfan set fans 1 speed 0
-			/home/drakkir/src/gridfan/gridfan set fans 2 speed 0
-			/home/drakkir/src/gridfan/gridfan set fans 3 speed 0
-			/home/drakkir/src/gridfan/gridfan set fans 4 speed 20
-			/home/drakkir/src/gridfan/gridfan set fans 5 speed 0
-			/home/drakkir/src/gridfan/gridfan set fans 6 speed 30
-			let mode=0
-		elif [ $temps -lt 60 ]
-		then
-			/home/drakkir/src/gridfan/gridfan set fans 1 speed 0
-			/home/drakkir/src/gridfan/gridfan set fans 2 speed 0
-			/home/drakkir/src/gridfan/gridfan set fans 3 speed 0
-			/home/drakkir/src/gridfan/gridfan set fans 4 speed 30
-			/home/drakkir/src/gridfan/gridfan set fans 5 speed 0
-			/home/drakkir/src/gridfan/gridfan set fans 6 speed 50
-			let mode=1
-		elif [ $temps -lt 70 ]
-		then
-			/home/drakkir/src/gridfan/gridfan set fans 1 speed 50
-			/home/drakkir/src/gridfan/gridfan set fans 2 speed 50
-			/home/drakkir/src/gridfan/gridfan set fans 3 speed 50
-			/home/drakkir/src/gridfan/gridfan set fans 4 speed 50
-			/home/drakkir/src/gridfan/gridfan set fans 5 speed 50
-			/home/drakkir/src/gridfan/gridfan set fans 6 speed 50
-			let mode=2
-		else
-			/home/drakkir/src/gridfan/gridfan set fans all speed 90
-			let mode=3
-		fi
-		# update the previous temp, i put this inside the if statement so that it only updates if the temp changes by more than 5. stops the temp slowly creeping up 
-		prevtemp=$temps
-	fi
-	# Wait 5 seconds then go again
-	sleep 5
+  # find the difference between the previous temp and the current temp, this stops the fans from spinning up and down to quickly 
+  let dif=$(abs_diff $prevtemp $temps)
+
+  echo "temps = $temps"
+  #echo "prevtemp = $prevtemp"
+  #echo "dif = $dif"
+  echo "mode = $mode"
+  # if the difference is greater than or equal to 5 it will run the fan speed rules
+  if [ $dif -ge 5 ]
+  then
+    # u can fine tune this as much as you like
+    if [ $temps -lt 50 ]
+    then
+      if [[ $mode -ne 0 ]]; then
+        /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 3 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 4 speed 20
+        /home/drakkir/src/gridfan/gridfan set fans 5 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 6 speed 30
+        let mode=0
+      fi
+    elif [ $temps -lt 60 ]
+    then
+      if [[ $mode -ne 1 ]]; then
+        /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 3 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 4 speed 30
+        /home/drakkir/src/gridfan/gridfan set fans 5 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 6 speed 50
+        let mode=1
+      fi
+    elif [ $temps -lt 70 ]
+    then
+      if [[ $mode -ne 2 ]]; then
+        /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
+        /home/drakkir/src/gridfan/gridfan set fans 3 speed 50
+        /home/drakkir/src/gridfan/gridfan set fans 4 speed 70
+        /home/drakkir/src/gridfan/gridfan set fans 5 speed 50
+        /home/drakkir/src/gridfan/gridfan set fans 6 speed 70
+        let mode=2
+      fi
+    else
+      if [[ $mode -ne 1 ]]; then
+        /home/drakkir/src/gridfan/gridfan set fans all speed 90
+        let mode=3
+      fi
+    fi
+    # update the previous temp, i put this inside the if statement so that it only updates if the temp changes by more than 5. stops the temp slowly creeping up 
+    prevtemp=$temps
+  fi
+  # Wait 5 seconds then go again
+  sleep 5
 done
 
