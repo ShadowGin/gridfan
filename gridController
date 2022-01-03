@@ -8,6 +8,7 @@ function abs_diff {
 # set the previous temp to 0 forcing it to run the fans on first loop
 prevtemp=0
 mode=99
+timer=99
 
 # start the loop
 while true
@@ -21,54 +22,51 @@ do
   let dif=$(abs_diff $prevtemp $temps)
 
   echo "temps = $temps"
-  #echo "prevtemp = $prevtemp"
-  #echo "dif = $dif"
   echo "mode = $mode"
   # if the difference is greater than or equal to 5 it will run the fan speed rules
-  if [ $dif -ge 5 ]
-  then
-    # u can fine tune this as much as you like
-    if [ $temps -lt 50 ]
-    then
-      if [[ $mode -ne 0 ]]; then
-        /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 3 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 4 speed 20
-        /home/drakkir/src/gridfan/gridfan set fans 5 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 6 speed 30
-        let mode=0
+  if [ $dif -ge 5 ]; then
+    let timer=${timer}+1
+    if [ $timer -ge 2 ]; then 
+      let timer=0
+      if [ $temps -lt 50 ]; then
+        if [ $mode -ne 0 ]; then
+          /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 3 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 4 speed 20
+          /home/drakkir/src/gridfan/gridfan set fans 5 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 6 speed 30
+          let mode=0
+        fi
+      elif [ $temps -lt 60 ]; then
+        if [ $mode -ne 1 ]; then
+          /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 3 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 4 speed 30
+          /home/drakkir/src/gridfan/gridfan set fans 5 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 6 speed 50
+          let mode=1
+        fi
+      elif [ $temps -lt 70 ]; then
+        if [ $mode -ne 2 ]; then
+          /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
+          /home/drakkir/src/gridfan/gridfan set fans 3 speed 50
+          /home/drakkir/src/gridfan/gridfan set fans 4 speed 70
+          /home/drakkir/src/gridfan/gridfan set fans 5 speed 50
+          /home/drakkir/src/gridfan/gridfan set fans 6 speed 70
+          let mode=2
+        fi
+      else
+        if [ $mode -ne 1 ]; then
+          /home/drakkir/src/gridfan/gridfan set fans all speed 90
+          let mode=3
+        fi
       fi
-    elif [ $temps -lt 60 ]
-    then
-      if [[ $mode -ne 1 ]]; then
-        /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 3 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 4 speed 30
-        /home/drakkir/src/gridfan/gridfan set fans 5 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 6 speed 50
-        let mode=1
-      fi
-    elif [ $temps -lt 70 ]
-    then
-      if [[ $mode -ne 2 ]]; then
-        /home/drakkir/src/gridfan/gridfan set fans 1 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 2 speed 0
-        /home/drakkir/src/gridfan/gridfan set fans 3 speed 50
-        /home/drakkir/src/gridfan/gridfan set fans 4 speed 70
-        /home/drakkir/src/gridfan/gridfan set fans 5 speed 50
-        /home/drakkir/src/gridfan/gridfan set fans 6 speed 70
-        let mode=2
-      fi
-    else
-      if [[ $mode -ne 1 ]]; then
-        /home/drakkir/src/gridfan/gridfan set fans all speed 90
-        let mode=3
-      fi
+      # update the previous temp, i put this inside the if statement so that it only updates if the temp changes by more than 5. stops the temp slowly creeping up 
+      prevtemp=$temps
     fi
-    # update the previous temp, i put this inside the if statement so that it only updates if the temp changes by more than 5. stops the temp slowly creeping up 
-    prevtemp=$temps
   fi
   # Wait 5 seconds then go again
   sleep 5
